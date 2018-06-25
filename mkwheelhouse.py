@@ -144,6 +144,15 @@ def build_wheels(index_url, pip_wheel_args, exclusions):
     return build_dir
 
 
+def auditwheels(build_dir):
+    args = [
+        'auditwheel', 'repair'
+    ]
+
+    for wheel in [os.path.join(build_dir, f) for f in os.listdir(build_dir) if os.path.isfile(os.path.join(build_dir, f))]:
+        spawn(args + [wheel])
+
+
 def parse_args():
     parser = argparse.ArgumentParser(
         description='Generate and upload wheels to an Amazon S3 wheelhouse',
@@ -170,6 +179,7 @@ def run(args, pip_wheel_args):
         bucket.put('<!DOCTYPE html><html></html>', 'index.html', acl=args.acl)
     index_url = bucket.generate_url('index.html')
     build_dir = build_wheels(index_url, pip_wheel_args, args.exclude)
+    auditwheels(build_dir)
     bucket.sync(build_dir, acl=args.acl)
     bucket.put(bucket.make_index(), key='index.html', acl=args.acl)
     shutil.rmtree(build_dir)
